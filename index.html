@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>乘法樂園 - SEN數學</title>
+<style>
+:root { --purple:#7b2cbf; --gold:#ffd700; --green:#4caf50; --red:#f44336; }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:'Microsoft JhengHei',sans-serif; background:#1a1a2e; color:#fff; min-height:100vh; font-size:18px; touch-action:manipulation; }
+.page { display:none; min-height:100vh; padding:20px; }
+.page.active { display:block; }
+.home-card, .hub-card, .problem-card, .quiz-card, .dash-card { background:#fff; color:#1a1a2e; border:4px solid #ffd700; border-radius:24px; padding:30px; margin:20px auto; max-width:800px; }
+h1 { font-size:3em; color:#ffd700; text-align:center; margin:20px 0; }
+h2 { font-size:2.2em; color:#7b2cbf; margin:15px 0; }
+button, .btn { min-height:70px; padding:18px 36px; font-size:1.4em; border-radius:20px; border:none; cursor:pointer; background:#7b2cbf; color:#fff; }
+button:active { transform:scale(0.95); }
+.nav-btn { min-width:150px; min-height:80px; font-size:1.6em; }
+.hub-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:20px; max-width:900px; margin:0 auto; }
+.hub-card { text-align:center; cursor:pointer; transition:all .3s; }
+.hub-card:hover { transform:scale(1.05); border-color:#fff; }
+.hub-icon { font-size:3.5em; margin-bottom:10px; }
+.hub-title { font-size:1.8em; font-weight:bold; }
+.hub-desc { font-size:1.2em; opacity:.8; }
+.progress-bar { position:fixed; top:0; left:0; width:100%; background:#333; height:12px; z-index:1000; }
+.progress-fill { height:100%; background:#ffd700; transition:width .4s; }
+#globalProgress { position:fixed; top:15px; right:20px; background:rgba(0,0,0,.6); padding:8px 16px; border-radius:30px; font-size:1.1em; z-index:1001; }
+.quiz-opt-row { display:flex; align-items:center; gap:12px; margin:12px 0; }
+.quiz-opt { flex:1; text-align:left; min-height:80px; font-size:1.6em; padding:20px; background:#f0f0f0; border:3px solid #7b2cbf; border-radius:16px; }
+.quiz-opt.correct { background:#c8e6c9; border-color:#4caf50; }
+.quiz-opt.wrong { background:#ffcdd2; border-color:#f44336; }
+.quiz-opt-label { font-size:1.8em; font-weight:bold; color:#7b2cbf; width:50px; text-align:center; }
+.quiz-tts-btn { background:#7b2cbf; color:#fff; border:none; border-radius:12px; padding:14px 20px; font-size:1.4em; }
+.input-box { font-size:2em; padding:16px; width:100%; max-width:400px; border:4px solid #ffd700; border-radius:16px; text-align:center; margin:10px 0; }
+.problem-list { max-width:900px; margin:0 auto; }
+.problem-item { background:#fff; color:#1a1a2e; border:4px solid #ffd700; border-radius:20px; padding:25px; margin:15px 0; }
+.celebration-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.85); display:none; align-items:center; justify-content:center; z-index:2000; }
+.celebration-overlay.show { display:flex; }
+.celebration-text { font-size:4em; color:#ffd700; text-align:center; }
+.teacher-btn { position:fixed; top:80px; right:25px; width:60px; height:60px; background:#ff9800; border-radius:50%; border:none; font-size:1.8em; z-index:1000; }
+.teacher-panel { position:fixed; top:150px; right:20px; background:#333; border:3px solid #ffd700; border-radius:16px; padding:20px; width:300px; display:none; z-index:1000; }
+.hint-popup { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#fff; color:#333; padding:40px; border-radius:24px; max-width:600px; width:90%; text-align:center; z-index:2000; box-shadow:0 20px 60px rgba(0,0,0,.5); display:none; }
+.hint-popup.show { display:block; }
+.toast { position:fixed; bottom:30px; left:50%; transform:translateX(-50%); background:#333; color:#fff; padding:16px 32px; border-radius:12px; font-size:1.3em; z-index:9999; }
+</style>
+</head>
+<body>
+<div id="progressBar" class="progress-bar"><div id="progressFill" class="progress-fill" style="width:0%"></div></div>
+<div id="globalProgress">學習進度：<span id="progressText">0/5</span></div>
+
+<!-- HOME -->
+<div id="home" class="page active">
+  <div class="home-card" style="text-align:center;">
+    <h1>🧮 乘法樂園</h1>
+    <p style="font-size:1.8em;margin:20px 0;">歡迎來到數學小天地！</p>
+    <input id="studentName" type="text" placeholder="請輸入你的名字" style="font-size:2em;padding:20px;width:80%;max-width:400px;border:4px solid #ffd700;border-radius:16px;text-align:center;margin:20px 0;">
+    <br>
+    <button onclick="startLearning()" style="background:#4caf50;font-size:1.8em;padding:25px 60px;">開始學習 🚀</button>
+  </div>
+</div>
+
+<!-- HUB -->
+<div id="hub" class="page">
+  <div style="max-width:900px;margin:0 auto;text-align:center;">
+    <div id="hubGreeting" style="font-size:2.2em;margin-bottom:30px;">👋 你好，準備好學習未？</div>
+    <div class="hub-grid">
+      <div class="hub-card" onclick="goTo('slides');initSlides();">
+        <div class="hub-icon">📖</div>
+        <div class="hub-title">乘法小故事</div>
+        <div class="hub-desc">睇圖學乘法</div>
+        <div class="hub-status" id="hubSlides"></div>
+      </div>
+      <div class="hub-card" onclick="goTo('practice');initPractice();">
+        <div class="hub-icon">✏️</div>
+        <div class="hub-title">例題練習</div>
+        <div class="hub-desc">24題生活例子</div>
+        <div class="hub-status" id="hubPractice"></div>
+      </div>
+      <div class="hub-card" onclick="goTo('quiz');if(!state.quiz.length)startQuiz();else renderQuiz();">
+        <div class="hub-icon">📝</div>
+        <div class="hub-title">小評估</div>
+        <div class="hub-desc">測驗你識幾多</div>
+        <div class="hub-status" id="hubQuiz"></div>
+      </div>
+      <div class="hub-card" onclick="goTo('dashboard');showDashboard();">
+        <div class="hub-icon">🏆</div>
+        <div class="hub-title">我的成績</div>
+        <div class="hub-desc">證書 + 分數</div>
+        <div class="hub-status" id="hubDash"></div>
+      </div>
+    </div>
+    <div style="margin-top:30px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
+      <button onclick="goTo('home')" style="background:#666;">🏠 返回首頁</button>
+      <button onclick="toggleAutoTTS()" id="autoTTSBtn" style="background:#4caf50;">🔊 自動朗讀</button>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDES -->
+<div id="slides" class="page">
+  <h2 style="text-align:center;">📖 乘法小故事</h2>
+  <div id="slideContent" class="home-card" style="min-height:300px;text-align:center;"></div>
+  <div class="slide-nav" style="position:fixed;bottom:20px;left:0;width:100%;display:flex;justify-content:space-between;padding:0 30px;z-index:100;">
+    <button class="nav-btn" onclick="prevSlide()">⬅️ 上一步</button>
+    <button class="nav-btn" onclick="updateHubStatus();goTo('hub')">🏠 返回中心</button>
+    <button class="nav-btn" onclick="nextSlide()">下一步 ➡️</button>
+  </div>
+</div>
+
+<!-- PRACTICE -->
+<div id="practice" class="page">
+  <h2 style="text-align:center;">✏️ 例題練習（24題）</h2>
+  <div style="text-align:center;margin:10px 0;">
+    <button onclick="filterLevel(0)" style="background:#4caf50;">全部</button>
+    <button onclick="filterLevel(1)" style="background:#2196f3;">簡單 (2-5)</button>
+    <button onclick="filterLevel(2)" style="background:#ff9800;">中級 (6-9)</button>
+    <button onclick="filterLevel(3)" style="background:#f44336;">挑戰 (大數)</button>
+  </div>
+  <div id="practiceList" class="problem-list"></div>
+  <div style="text-align:center;margin:30px 0;">
+    <button onclick="updateHubStatus();goTo('hub')" style="background:#666;">🏠 返回中心</button>
+  </div>
+</div>
+
+<!-- QUIZ -->
+<div id="quiz" class="page">
+  <h2 style="text-align:center;">📝 小評估</h2>
+  <div id="quizContent" class="quiz-card"></div>
+  <div style="text-align:center;margin-top:20px;">
+    <button onclick="showQuizHint()" style="background:#ff9800;">💡 需要提示？</button>
+    <button onclick="updateHubStatus();goTo('hub')" style="background:#666;">🏠 返回中心</button>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="page">
+  <h2 style="text-align:center;">🏆 我的成績</h2>
+  <div id="dashContent" class="dash-card"></div>
+  <div style="text-align:center;margin:20px 0;">
+    <button onclick="printCert()" style="background:#ffd700;color:#1a1a2e;">📜 打印靚靚證書</button>
+    <button onclick="resetAndReturn()" style="background:#f44336;">🔄 重置一切</button>
+    <button onclick="goTo('hub')" style="background:#666;">🏠 返回中心</button>
+  </div>
+</div>
+
+<!-- OVERLAYS -->
+<div id="celebrationOverlay" class="celebration-overlay">
+  <div style="text-align:center;">
+    <div class="celebration-text">🎉 做得好！</div>
+    <div id="celebrationSub" style="font-size:2em;color:#fff;margin:20px 0;"></div>
+    <button onclick="continueToHub()" style="background:#4caf50;font-size:1.6em;padding:20px 50px;">繼續學習 →</button>
+  </div>
+</div>
+
+<div id="hintPopup" class="hint-popup">
+  <h3 style="font-size:2.2em;color:#ff9800;margin-bottom:20px;">💡 提示</h3>
+  <p id="hintText" style="font-size:1.8em;line-height:1.6;margin-bottom:20px;"></p>
+  <button onclick="closeHint()" style="background:#ff9800;color:#fff;border:none;padding:16px 40px;font-size:1.4em;border-radius:16px;">知道了 ✓</button>
+</div>
+
+<div id="teacherPanel" class="teacher-panel">
+  <div style="font-size:1.5em;color:#ffd700;margin-bottom:15px;">🎓 老師控制台</div>
+  <button onclick="confirmReset()" style="width:100%;margin-bottom:10px;background:#f44336;">🔄 重置進度</button>
+  <button onclick="toggleFullscreen()" style="width:100%;margin-bottom:10px;background:#2196f3;">🖥️ 全螢幕</button>
+  <button onclick="showHint()" style="width:100%;background:#ff9800;">💡 顯示提示</button>
+  <button onclick="toggleTeacherPanel()" style="width:100%;margin-top:10px;background:#666;">關閉</button>
+</div>
+
+<button class="teacher-btn" onclick="toggleTeacherPanel()">🎓</button>
+
+<script>
+// STATE
+let state = {
+  name: '',
+  currentSlide: 0,
+  score: 0,
+  quizIndex: 0,
+  quiz: [],
+  quizAnswered: false,
+  autoTTS: true,
+  completed: { slides: false, practice: false, quiz: false },
+  practiceDone: 0
+};
+
+const problems = [
+  {q:"每排果汁有 4 盒，媽媽買了 9 排，媽媽共買了果汁多少盒？", a:36, unit:"盒", h:"4 × 9 = 36", level:2},
+  {q:"每碟壽司有 2 件，子健吃了 8 碟，子健共吃了壽司多少件？", a:16, unit:"件", h:"2 × 8 = 16", level:1},
+  {q:"每串肉丸有 5 粒，7 串共有肉丸多少粒？", a:35, unit:"粒", h:"5 × 7 = 35", level:2},
+  {q:"製作一個蝴蝶結需用絲帶 7 米，媽媽製作了 5 個，媽媽共用了絲帶多少米？", a:35, unit:"米", h:"7 × 5 = 35", level:2},
+  {q:"每盒蘋果有 3 個，阿姨買了 6 盒，共買了多少個蘋果？", a:18, unit:"個", h:"3 × 6 = 18", level:1},
+  {q:"每支鉛筆 5 元，小明買了 4 支，共要付多少元？", a:20, unit:"元", h:"5 × 4 = 20", level:1},
+  {q:"每碟曲奇有 6 塊，妹妹吃了 3 碟，共吃了多少塊曲奇？", a:18, unit:"塊", h:"6 × 3 = 18", level:1},
+  {q:"每本書有 4 頁故事，爸爸講了 5 本，共講了多少頁？", a:20, unit:"頁", h:"4 × 5 = 20", level:1},
+  {q:"每張椅子坐 2 人，課室有 9 張椅子，最多坐多少人？", a:18, unit:"人", h:"2 × 9 = 18", level:1},
+  {q:"每盒蛋有 6 個，媽媽買了 4 盒，共買了多少個蛋？", a:24, unit:"個", h:"6 × 4 = 24", level:2},
+  {q:"每束花有 3 朵，姐姐插了 8 束，共插了多少朵花？", a:24, unit:"朵", h:"3 × 8 = 24", level:2},
+  {q:"每張貼紙 7 元，哥哥買了 3 張，共要付多少元？", a:21, unit:"元", h:"7 × 3 = 21", level:2},
+  {q:"每盒有 5 個波，小朋友玩了 5 盒，共玩了多少個波？", a:25, unit:"個", h:"5 × 5 = 25", level:2},
+  {q:"每杯飲品 4 元，爸爸買了 6 杯，共要付多少元？", a:24, unit:"元", h:"4 × 6 = 24", level:2},
+  {q:"每架玩具車 3 元，弟弟買了 7 架，共要付多少元？", a:21, unit:"元", h:"3 × 7 = 21", level:2},
+  {q:"每條麵包 8 元，媽媽買了 2 條，共要付多少元？", a:16, unit:"元", h:"8 × 2 = 16", level:1},
+  {q:"每對襪有 4 隻，媽媽買了 4 對，共買了多少隻襪？", a:16, unit:"隻", h:"4 × 4 = 16", level:1},
+  {q:"每隻星星有 9 個角，畫了 3 隻星星，共畫了多少個角？", a:27, unit:"個", h:"9 × 3 = 27", level:3},
+  {q:"每條魚有 5 片鱗，哥哥捉了 6 條魚，共捉了多少片鱗？", a:30, unit:"片", h:"5 × 6 = 30", level:2},
+  {q:"每包氣球有 7 個，妹妹買了 4 包，共買了多少個氣球？", a:28, unit:"個", h:"7 × 4 = 28", level:2},
+  {q:"每支雪糕 2 元，小朋友買了 7 支，共要付多少元？", a:14, unit:"元", h:"2 × 7 = 14", level:1},
+  {q:"每頂帽有 6 個鈕扣，阿姨做了 5 頂，共做了多少個鈕扣？", a:30, unit:"個", h:"6 × 5 = 30", level:2},
+  {q:"每碟有 8 隻碟，媽媽洗了 3 碟，共洗了多少隻碟？", a:24, unit:"隻", h:"8 × 3 = 24", level:2},
+  {q:"每把鎖匙有 4 條，爸爸有 7 把鎖匙，共有多少條鎖匙？", a:28, unit:"條", h:"4 × 7 = 28", level:2}
+];
+
+const introSlides = [
+  {emoji:"🧮", title:"乘法是什麼？", body:"乘法係將相同數字加多次！<br>例如：2 + 2 + 2 = 6 就係 3 × 2 = 6"},
+  {emoji:"🍎", title:"生活例子", body:"每排有 4 盒果汁，買 9 排<br>就係 4 × 9 = 36 盒！"},
+  {emoji:"✨", title:"記住口訣", body:"2×2=4　2×3=6　2×4=8<br>3×3=9　3×4=12　3×5=15<br>慢慢嚟，你可以嘅！"}
+];
+
+function speak(text) {
+  if (!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'zh-HK';
+  u.rate = 0.85;
+  const voices = speechSynthesis.getVoices();
+  const cantonese = voices.find(v => v.lang.includes('HK') || v.lang.includes('yue'));
+  if (cantonese) u.voice = cantonese;
+  speechSynthesis.speak(u);
+}
+
+function toggleAutoTTS() {
+  state.autoTTS = !state.autoTTS;
+  const btn = document.getElementById('autoTTSBtn');
+  btn.textContent = state.autoTTS ? '🔊 自動朗讀' : '🔇 自動朗讀';
+  btn.style.background = state.autoTTS ? '#4caf50' : '#888';
+}
+
+function updateProgress() {
+  const done = Object.values(state.completed).filter(Boolean).length;
+  const total = Object.keys(state.completed).length;
+  document.getElementById('progressFill').style.width = (done / total * 100) + '%';
+  document.getElementById('progressText').textContent = `${done}/${total}`;
+}
+
+function goTo(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(page).classList.add('active');
+  if (page === 'hub') updateHubStatus();
+}
+
+function startLearning() {
+  state.name = document.getElementById('studentName').value.trim() || '同學';
+  document.getElementById('hubGreeting').textContent = `👋 ${state.name}，準備好學習未？`;
+  updateHubStatus();
+  goTo('hub');
+  if (state.autoTTS) setTimeout(() => speak(`你好${state.name}，歡迎來到乘法樂園`), 600);
+}
+
+function initSlides() {
+  state.currentSlide = 0;
+  renderSlide();
+}
+
+function renderSlide() {
+  const s = introSlides[state.currentSlide];
+  document.getElementById('slideContent').innerHTML = `
+    <div style="font-size:5em;margin:20px 0;">${s.emoji}</div>
+    <h2 style="color:#7b2cbf;">${s.title}</h2>
+    <p style="font-size:1.8em;margin:30px 0;line-height:1.6;">${s.body}</p>
+  `;
+  if (state.autoTTS) speak(s.title + '。' + s.body.replace(/<br>/g,' '));
+}
+
+function nextSlide() {
+  if (state.currentSlide < introSlides.length - 1) {
+    state.currentSlide++;
+    renderSlide();
+  } else {
+    state.completed.slides = true;
+    updateHubStatus();
+    showCelebration('slides');
+  }
+}
+
+function prevSlide() {
+  if (state.currentSlide > 0) {
+    state.currentSlide--;
+    renderSlide();
+  }
+}
+
+let currentFilter = 0;
+function filterLevel(lvl) {
+  currentFilter = lvl;
+  initPractice();
+}
+
+function initPractice() {
+  const container = document.getElementById('practiceList');
+  container.innerHTML = '';
+  let filtered = problems;
+  if (currentFilter === 1) filtered = problems.filter(p => p.level === 1);
+  if (currentFilter === 2) filtered = problems.filter(p => p.level === 2);
+  if (currentFilter === 3) filtered = problems.filter(p => p.level === 3);
+
+  filtered.forEach((p, i) => {
+    const div = document.createElement('div');
+    div.className = 'problem-item';
+    div.innerHTML = `
+      <div style="font-size:1.5em;margin-bottom:15px;">${i+1}. ${p.q}</div>
+      <div style="display:flex;gap:15px;align-items:center;flex-wrap:wrap;">
+        <div>橫式：<input class="input-box" id="h${i}" placeholder="例如 4 × 9" style="max-width:220px;"></div>
+        <div>答案：<input class="input-box" id="a${i}" placeholder="數字" style="max-width:140px;"> (${p.unit})</div>
+        <button onclick="checkProblem(${i}, this)" style="background:#4caf50;min-height:60px;padding:12px 30px;">✅ 檢查</button>
+        <button onclick="speak('${p.q}');speak('${p.h}')" style="background:#7b2cbf;min-height:60px;padding:12px 20px;">🔊 聽</button>
+      </div>
+      <div id="fb${i}" style="margin-top:10px;font-size:1.4em;"></div>
+    `;
+    container.appendChild(div);
+  });
+  if (state.autoTTS) setTimeout(() => speak('呢度有24條生活例子，逐題做啦'), 500);
+}
+
+function checkProblem(i, btn) {
+  const p = problems[i];
+  const hVal = document.getElementById('h' + i).value.trim();
+  const aVal = parseInt(document.getElementById('a' + i).value);
+  const fb = document.getElementById('fb' + i);
+  const correctH = p.h.replace(/\s/g,'');
+  const userH = hVal.replace(/\s/g,'');
+
+  if (userH === correctH && aVal === p.a) {
+    fb.innerHTML = `✅ 正確！${p.h} (${p.unit})`;
+    fb.style.color = '#4caf50';
+    btn.style.background = '#4caf50';
+    btn.disabled = true;
+    state.practiceDone++;
+    speak('做得好！');
+    if (state.practiceDone >= 8 && !state.completed.practice) {
+      state.completed.practice = true;
+      showCelebration('practice');
+    }
+  } else {
+    fb.innerHTML = `❌ 再試一次！提示：${p.h}`;
+    fb.style.color = '#f44336';
+    speak('再試一次');
+    setTimeout(() => { fb.innerHTML = ''; }, 2500);
+  }
+  updateHubStatus();
+}
+
+function startQuiz() {
+  state.quiz = [...problems].sort(() => Math.random() - 0.5).slice(0, 8);
+  state.quizIndex = 0;
+  state.score = 0;
+  state.quizAnswered = false;
+  state.completed.quiz = false;
+  renderQuiz();
+  goTo('quiz');
+  if (state.autoTTS) setTimeout(() => speak(state.quiz[0].q), 800);
+}
+
+function renderQuiz() {
+  const q = state.quiz[state.quizIndex];
+  const container = document.getElementById('quizContent');
+  container.innerHTML = `
+    <div style="font-size:1.6em;margin-bottom:25px;">第 ${state.quizIndex+1} / 8 題</div>
+    <div style="font-size:1.8em;margin-bottom:25px;">${q.q}</div>
+    <div style="display:flex;gap:15px;align-items:center;margin:15px 0;">
+      <div>橫式：<input id="quizH" class="input-box" placeholder="4 × 9" style="max-width:200px;"></div>
+      <div>答案：<input id="quizA" class="input-box" placeholder="數字" style="max-width:120px;"></div>
+    </div>
+    <div style="margin:20px 0;">
+      <button onclick="submitQuizAnswer()" style="background:#4caf50;font-size:1.6em;padding:18px 50px;">✅ 提交答案</button>
+      <button onclick="speak('${q.q}')" style="background:#7b2cbf;">🔊 聽題目</button>
+    </div>
+    <div id="quizFB" style="font-size:1.6em;margin-top:15px;"></div>
+  `;
+}
+
+function submitQuizAnswer() {
+  if (state.quizAnswered) return;
+  state.quizAnswered = true;
+  const q = state.quiz[state.quizIndex];
+  const hVal = document.getElementById('quizH').value.trim().replace(/\s/g,'');
+  const aVal = parseInt(document.getElementById('quizA').value);
+  const fb = document.getElementById('quizFB');
+  const correctH = q.h.replace(/\s/g,'');
+
+  if (hVal === correctH && aVal === q.a) {
+    state.score++;
+    fb.innerHTML = `✅ 正確！${q.h} (${q.unit})`;
+    fb.style.color = '#4caf50';
+    speak('做得好！');
+    setTimeout(nextQuiz, 1400);
+  } else {
+    fb.innerHTML = `❌ 錯咗！正確答案係 ${q.h} (${q.unit})`;
+    fb.style.color = '#f44336';
+    speak('再試一次');
+    setTimeout(() => {
+      state.quizAnswered = false;
+      fb.innerHTML = '';
+    }, 2200);
+  }
+}
+
+function nextQuiz() {
+  state.quizIndex++;
+  if (state.quizIndex >= state.quiz.length) {
+    state.completed.quiz = true;
+    updateHubStatus();
+    showCelebration('quiz');
+  } else {
+    state.quizAnswered = false;
+    renderQuiz();
+    if (state.autoTTS) setTimeout(() => speak(state.quiz[state.quizIndex].q), 600);
+  }
+}
+
+function showQuizHint() {
+  const q = state.quiz[state.quizIndex];
+  document.getElementById('hintText').innerHTML = `正確橫式：<strong>${q.h}</strong><br>答案：${q.a} ${q.unit}`;
+  document.getElementById('hintPopup').classList.add('show');
+  speak('提示：' + q.h);
+}
+
+function closeHint() {
+  document.getElementById('hintPopup').classList.remove('show');
+}
+
+function showCelebration(activity) {
+  const names = {slides:'乘法小故事', practice:'例題練習', quiz:'小評估'};
+  document.getElementById('celebrationSub').textContent = names[activity] + ' 完成左喇！你做得真好！';
+  document.getElementById('celebrationOverlay').classList.add('show');
+  speak(names[activity] + '完成左喇！你做得真好！');
+}
+
+function continueToHub() {
+  document.getElementById('celebrationOverlay').classList.remove('show');
+  updateHubStatus();
+  goTo('hub');
+}
+
+function updateHubStatus() {
+  const done = '<span style="background:#4caf50;color:#fff;padding:4px 14px;border-radius:20px;">✅ 完成</span>';
+  const locked = '<span style="background:rgba(255,255,255,.2);padding:4px 14px;border-radius:20px;">🔓 可選</span>';
+  document.getElementById('hubSlides').innerHTML = state.completed.slides ? done : locked;
+  document.getElementById('hubPractice').innerHTML = state.completed.practice ? done : locked;
+  document.getElementById('hubQuiz').innerHTML = state.completed.quiz ? done : locked;
+  document.getElementById('hubDash').innerHTML = (state.completed.practice && state.completed.quiz) ? done : locked;
+  updateProgress();
+  saveState();
+}
+
+function showDashboard() {
+  const total = Object.values(state.completed).filter(Boolean).length;
+  const percent = Math.round(total / 3 * 100);
+  let cert = '🥉 銅牌';
+  if (percent >= 90) cert = '🥇 金牌';
+  else if (percent >= 70) cert = '🥈 銀牌';
+  document.getElementById('dashContent').innerHTML = `
+    <div style="text-align:center;">
+      <div style="font-size:3em;margin:20px 0;">${state.name}</div>
+      <div style="font-size:2.2em;margin:15px 0;">完成度：${percent}%</div>
+      <div style="font-size:2.8em;margin:20px 0;color:#ffd700;">${cert}</div>
+      <div style="font-size:1.6em;margin-top:30px;">已完成：乘法小故事 + 例題練習 + 小評估</div>
+      <div style="margin-top:25px;font-size:1.4em;">練習題數：${state.practiceDone} / 24</div>
+    </div>
+  `;
+  goTo('dashboard');
+}
+
+function printCert() {
+  const w = window.open('', '_blank');
+  w.document.write(`<html><body style="font-family:Microsoft JhengHei;text-align:center;padding:40px;">
+    <h1 style="color:#7b2cbf;font-size:3em;">乘法樂園 完成證書</h1>
+    <p style="font-size:2.2em;">${state.name}</p>
+    <p style="font-size:1.8em;">已成功完成所有乘法練習</p>
+    <p style="font-size:2em;color:#ffd700;margin:30px 0;">🏆 優秀小數學家 🏆</p>
+    <p style="font-size:1.4em;">日期：${new Date().toLocaleDateString('zh-HK')}</p>
+  </body></html>`);
+  w.print();
+}
+
+function toggleTeacherPanel() {
+  const p = document.getElementById('teacherPanel');
+  p.style.display = p.style.display === 'block' ? 'none' : 'block';
+}
+
+function confirmReset() {
+  if (confirm('確定要重置所有進度嗎？')) resetAndReturn();
+}
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+  else document.exitFullscreen();
+}
+
+function resetAndReturn() {
+  state = { name: '', currentSlide: 0, score: 0, quizIndex: 0, quiz: [], quizAnswered: false, autoTTS: true, completed: { slides: false, practice: false, quiz: false }, practiceDone: 0 };
+  localStorage.removeItem('senMathState');
+  goTo('home');
+}
+
+function saveState() {
+  localStorage.setItem('senMathState', JSON.stringify(state));
+}
+
+function loadState() {
+  const saved = localStorage.getItem('senMathState');
+  if (saved) {
+    try { Object.assign(state, JSON.parse(saved)); } catch(e){}
+  }
+}
+
+function init() {
+  loadState();
+  if (state.name) {
+    document.getElementById('studentName').value = state.name;
+  }
+  updateProgress();
+  if ('speechSynthesis' in window) {
+    speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+  }
+  // Teacher button always visible
+  console.log('%c[SEN Math] Project ready. 24 problems loaded.', 'color:#4caf50');
+}
+
+window.onload = init;
+</script>
+</body>
+</html>
