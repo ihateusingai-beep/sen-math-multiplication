@@ -322,33 +322,7 @@ function initPractice() {
   if (state.autoTTS) setTimeout(() => speak('呢度有24條生活例子，逐題做啦'), 500);
 }
 
-function checkProblem(i, btn) {
-  const p = problems[i];
-  const hVal = document.getElementById('h' + i).value.trim();
-  const aVal = parseInt(document.getElementById('a' + i).value);
-  const fb = document.getElementById('fb' + i);
-  const correctH = p.h.replace(/\s/g,'');
-  const userH = hVal.replace(/\s/g,'');
 
-  if (userH === correctH && aVal === p.a) {
-    fb.innerHTML = `✅ 正確！${p.h} (${p.unit})`;
-    fb.style.color = '#4caf50';
-    btn.style.background = '#4caf50';
-    btn.disabled = true;
-    state.practiceDone++;
-    speak('做得好！');
-    if (state.practiceDone >= 8 && !state.completed.practice) {
-      state.completed.practice = true;
-      showCelebration('practice');
-    }
-  } else {
-    fb.innerHTML = `❌ 再試一次！提示：${p.h}`;
-    fb.style.color = '#f44336';
-    speak('再試一次');
-    setTimeout(() => { fb.innerHTML = ''; }, 2500);
-  }
-  updateHubStatus();
-}
 
 function startQuiz() {
   state.quiz = [...problems].sort(() => Math.random() - 0.5).slice(0, 8);
@@ -363,22 +337,48 @@ function startQuiz() {
 
 function renderQuiz() {
   const q = state.quiz[state.quizIndex];
+  const wrongs = [
+    {h: q.h.replace(q.a, q.a + 2), a: q.a + 2},
+    {h: q.h.replace(q.a, q.a - 1), a: q.a - 1}
+  ];
+  const opts = [{h: q.h, a: q.a, correct: true}, ...wrongs].sort(() => Math.random() - 0.5);
   const container = document.getElementById('quizContent');
   container.innerHTML = `
-    <div style="font-size:1.6em;margin-bottom:25px;">第 ${state.quizIndex+1} / 8 題</div>
+    <div style="font-size:1.6em;margin-bottom:20px;">第 ${state.quizIndex+1} / 8 題</div>
     <div style="font-size:1.8em;margin-bottom:25px;">${q.q}</div>
-    <div style="display:flex;gap:15px;align-items:center;margin:15px 0;">
-      <div>橫式：<input id="quizH" class="input-box" placeholder="4 × 9" style="max-width:200px;"></div>
-      <div>答案：<input id="quizA" class="input-box" placeholder="數字" style="max-width:120px;"></div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      ${opts.map((o, j) => `
+        <button onclick="submitQuizChoice(${o.correct}, this)" style="min-height:75px;font-size:1.5em;text-align:left;padding:18px 25px;background:#f0f0f0;color:#1a1a2e;border:4px solid #7b2cbf;border-radius:16px;">
+          ${['A','B','C'][j]}. ${o.h} (${o.a} ${q.unit})
+        </button>
+      `).join('')}
     </div>
-    <div style="margin:20px 0;">
-      <button onclick="submitQuizAnswer()" style="background:#4caf50;font-size:1.6em;padding:18px 50px;">✅ 提交答案</button>
-      <button onclick="speak('${q.q}')" style="background:#7b2cbf;">🔊 聽題目</button>
-    </div>
-    <div id="quizFB" style="font-size:1.6em;margin-top:15px;"></div>
+    <div id="quizFB" style="font-size:1.6em;margin-top:20px;"></div>
+    <button onclick="speak('${q.q}')" style="background:#7b2cbf;margin-top:15px;">🔊 聽題目</button>
   `;
 }
 
+function submitQuizChoice(isCorrect, btn) {
+  if (state.quizAnswered) return;
+  state.quizAnswered = true;
+  const fb = document.getElementById('quizFB');
+  const q = state.quiz[state.quizIndex];
+  if (isCorrect) {
+    state.score++;
+    fb.innerHTML = `✅ 正確！${q.h} (${q.unit})`;
+    fb.style.color = '#4caf50';
+    speak('做得好！');
+    setTimeout(nextQuiz, 1400);
+  } else {
+    fb.innerHTML = `❌ 錯咗！正確答案係 ${q.h} (${q.unit})`;
+    fb.style.color = '#f44336';
+    speak('再試一次');
+    setTimeout(() => {
+      state.quizAnswered = false;
+      fb.innerHTML = '';
+    }, 2200);
+  }
+}
 function submitQuizAnswer() {
   if (state.quizAnswered) return;
   state.quizAnswered = true;
