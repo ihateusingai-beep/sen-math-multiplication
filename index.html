@@ -183,10 +183,10 @@ let state = {
 };
 
 const problems = [
-  {q:"🍹🍹每排果汁有 4 盒，媽媽買了 9 排，媽媽共買了果汁多少盒？", a:36, unit:"盒", h:"4 × 9 = 36", level:2},
-  {q:"🍣🍣每碟壽司有 2 件，子健吃了 8 碟，子健共吃了壽司多少件？", a:16, unit:"件", h:"2 × 8 = 16", level:1},
-  {q:"🍡每串肉丸有 5 粒，7 串共有肉丸多少粒？", a:35, unit:"粒", h:"5 × 7 = 35", level:2},
-  {q:"🎀製作一個蝴蝶結需用絲帶 7 米，媽媽製作了 5 個，媽媽共用了絲帶多少米？", a:35, unit:"米", h:"7 × 5 = 35", level:2},
+  {q:"🍹🍹每排果汁有 4 盒，媽媽買了 9 排，媽媽共買了果汁多少盒？", a:36, unit:"盒", h:"4 × 9 = 36", level:2}, visual:"juice.png",
+  {q:"🍣🍣每碟壽司有 2 件，子健吃了 8 碟，子健共吃了壽司多少件？", a:16, unit:"件", h:"2 × 8 = 16", level:1}, visual:"sushi.png",
+  {q:"🍡每串肉丸有 5 粒，7 串共有肉丸多少粒？", a:35, unit:"粒", h:"5 × 7 = 35", level:2}, visual:"meatball.png",
+  {q:"🎀製作一個蝴蝶結需用絲帶 7 米，媽媽製作了 5 個，媽媽共用了絲帶多少米？", a:35, unit:"米", h:"7 × 5 = 35", level:2}, visual:"bow.png",
   {q:"每盒蘋果有 3 個，阿姨買了 6 盒，共買了多少個蘋果？", a:18, unit:"個", h:"3 × 6 = 18", level:1},
   {q:"每支鉛筆 5 元，小明買了 4 支，共要付多少元？", a:20, unit:"元", h:"5 × 4 = 20", level:1},
   {q:"每碟曲奇有 6 塊，妹妹吃了 3 碟，共吃了多少塊曲奇？", a:18, unit:"塊", h:"6 × 3 = 18", level:1},
@@ -305,8 +305,10 @@ function initPractice() {
   filtered.forEach((p, i) => {
     const div = document.createElement('div');
     div.className = 'problem-item';
+    const imgHtml = p.visual ? `<img src="assets/images/scenarios/${p.visual}" style="width:180px;height:110px;object-fit:cover;border-radius:12px;margin-bottom:12px;border:3px solid #ffd700;">` : '';
     div.innerHTML = `
       <div style="font-size:1.5em;margin-bottom:15px;">${i+1}. ${p.q}</div>
+      ${imgHtml}
       <div style="display:flex;gap:15px;align-items:center;flex-wrap:wrap;">
         <div style="display:flex;flex-direction:column;gap:10px;">
           <button onclick="checkPracticeChoice(${i}, true, this)" style="min-height:70px;font-size:1.4em;background:#f0f0f0;color:#1a1a2e;border:4px solid #7b2cbf;border-radius:16px;padding:15px 20px;text-align:left;">${p.h} (${p.a} ${p.unit})</button>
@@ -379,18 +381,6 @@ function submitQuizChoice(isCorrect, btn) {
     }, 2200);
   }
 }
-function submitQuizAnswer() {
-  if (state.quizAnswered) return;
-  state.quizAnswered = true;
-  const q = state.quiz[state.quizIndex];
-  const hVal = document.getElementById('quizH').value.trim().replace(/\s/g,'');
-  const aVal = parseInt(document.getElementById('quizA').value);
-  const fb = document.getElementById('quizFB');
-  const correctH = q.h.replace(/\s/g,'');
-
-  if (hVal === correctH && aVal === q.a) {
-    state.score++;
-    fb.innerHTML = `✅ 正確！${q.h} (${q.unit})`;
     fb.style.color = '#4caf50';
     speak('做得好！');
     setTimeout(nextQuiz, 1400);
